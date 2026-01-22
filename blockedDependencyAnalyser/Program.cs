@@ -1,18 +1,22 @@
-﻿using System.Collections.Immutable;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Immutable;
 using System.Xml.Linq;
 
+namespace BlockedDependencies;
+
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
+public class BlockedDependencyAnalyser : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "NC0001";
-    private static readonly LocalizableString Title = "Newtonsoft.Json Dependency Detected";
-    private static readonly LocalizableString MessageFormat = "Project contains Newtonsoft.Json v13+ dependency. This version is prohibited.";
+    private static readonly LocalizableString Title = "Blocked Dependency Detected";
+    private static readonly LocalizableString MessageFormat = "Project contains blocked dependency. This version is prohibited.";
     private const string Category = "Compatibility";
-
-    private const List<BlockedDependency> BlockedDependencies = [
-        new BlockedDependency("Newtonsoft.Json", new Version(13, 0, 0))
+    
+    private static List<BlockedDependency> BlockedDependencies = [
+        new BlockedDependency() {PackageName = "Newtonsoft.Json", BlockFromVersion = "13.0.0", BlockToVersion = null}
     ];
-
+        
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         Title,
@@ -20,7 +24,7 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Warns when a project has Newtonsoft.Json v13+ as a dependency, which is prohibited.");
+        description: "Warns when a project has blocked dependencies.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -37,7 +41,7 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
         if (csprojPath == null)
             return;
 
-        if (HasNewtonsoftJsonDependency(csprojPath))
+        if (HasBlockedDependency(csprojPath, BlockedDependencies))
         {
             var diagnostic = Diagnostic.Create(Rule, Location.None);
             context.ReportDiagnostic(diagnostic);
@@ -90,10 +94,12 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
                 foreach (var blocked in blockedDependencies)
                 {
                     var includeAttr = reference.Attribute("Include")?.Value ?? "";
-                    if (includeAttr.Equals(blocked.Name, StringComparison.OrdinalIgnoreCase))
+                    if (includeAttr.Equals(blocked.PackageName, StringComparison.OrdinalIgnoreCase))
                     {
                         var versionAttr = reference.Attribute("Version")?.Value ?? "";
-                        if (IsVersionGreaterOrEqual(versionAttr, blocked.MinimumVersion))
+                        var isBlocked = (blocked.BlockFromVersion == null || IsVersionGreaterOrEqual(versionAttr, blocked.BlockFromVersion))
+                            && (blocked.BlockToVersion == null || IsVersionLessThanOrEqual(versionAttr, blocked.BlockToVersion));
+                        if (isBlocked)
                             return true;
                     }
                 }
@@ -106,12 +112,14 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
                 foreach (var blocked in blockedDependencies)
                 {
                     var includeAttr = reference.Attribute("Include")?.Value ?? "";
-                    if (includeAttr.StartsWith(blocked.Name, StringComparison.OrdinalIgnoreCase))
+                    if (includeAttr.StartsWith(blocked.PackageName, StringComparison.OrdinalIgnoreCase))
                     {
                         var versionMatch = System.Text.RegularExpressions.Regex.Match(includeAttr, @"Version=(\d+\.\d+\.\d+\.\d+)");
                         if (versionMatch.Success && Version.TryParse(versionMatch.Groups[1].Value, out var version))
                         {
-                            if (IsVersionGreaterOrEqual(version.ToString(), blocked.MinimumVersion))
+                            var isBlocked = (blocked.BlockFromVersion == null || IsVersionGreaterOrEqual(version.ToString(), blocked.BlockFromVersion))
+                                && (blocked.BlockToVersion == null || IsVersionLessThanOrEqual(version.ToString(), blocked.BlockToVersion));
+                            if (isBlocked)
                                 return true;
                         }
                     }
@@ -127,13 +135,24 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private bool IsVersionGreaterOrEqual(string versionString, Version minimumVersion)
+    private bool IsVersionGreaterOrEqual(string versionString, string minimumVersion)
     {
         if (string.IsNullOrWhiteSpace(versionString))
             return false;
 
-        if (Version.TryParse(versionString, out var version))
-            return version >= minimumVersion;
+        if (Version.TryParse(versionString, out var version) && Version.TryParse(minimumVersion, out var minVersion))
+            return version >= minVersion;
+
+        return false;
+    }
+
+    private bool IsVersionLessThanOrEqual(string versionString, string minimumVersion)
+    {
+        if (string.IsNullOrWhiteSpace(versionString))
+            return false;
+
+        if (Version.TryParse(versionString, out var version) && Version.TryParse(minimumVersion, out var minVersion))
+            return version <= minVersion;
 
         return false;
     }

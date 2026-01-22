@@ -5,12 +5,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
 using Xunit;
 
-namespace exampleAnalyser.Tests;
+namespace BlockedDependencyAnalyser.Tests;
 
-public class NewtonsoftJsonAnalyzerTests
+public class BlockedDependencyAnalyserTests
 {
-    private const string NC0001 = "NC0001";
-
     [Fact]
     public void ShouldDetectNewtonsoftJsonV13PackageReference()
     {
@@ -44,7 +42,7 @@ public class NewtonsoftJsonAnalyzerTests
 
             // Assert
             Assert.NotEmpty(diagnostics);
-            Assert.Contains(diagnostics, d => d.Id == NC0001);
+            Assert.Contains(diagnostics, d => d.Id == BlockedDependencies.BlockedDependencyAnalyser.DiagnosticId);
         }
         finally
         {
@@ -85,7 +83,7 @@ public class NewtonsoftJsonAnalyzerTests
             var diagnostics = RunAnalyzer(tempDir, sourceContent);
 
             // Assert
-            Assert.Empty(diagnostics.Where(d => d.Id == NC0001));
+            Assert.Empty(diagnostics.Where(d => d.Id == BlockedDependencies.BlockedDependencyAnalyser.DiagnosticId));
         }
         finally
         {
@@ -126,7 +124,7 @@ public class NewtonsoftJsonAnalyzerTests
             var diagnostics = RunAnalyzer(tempDir, sourceContent);
 
             // Assert
-            Assert.Empty(diagnostics.Where(d => d.Id == NC0001));
+            Assert.Empty(diagnostics.Where(d => d.Id == BlockedDependencies.BlockedDependencyAnalyser.DiagnosticId));
         }
         finally
         {
@@ -168,7 +166,7 @@ public class NewtonsoftJsonAnalyzerTests
 
             // Assert
             Assert.NotEmpty(diagnostics);
-            Assert.Contains(diagnostics, d => d.Id == NC0001);
+            Assert.Contains(diagnostics, d => d.Id == BlockedDependencies.BlockedDependencyAnalyser.DiagnosticId);
         }
         finally
         {
@@ -209,7 +207,7 @@ public class NewtonsoftJsonAnalyzerTests
             var diagnostics = RunAnalyzer(tempDir, sourceContent);
 
             // Assert
-            Assert.Empty(diagnostics.Where(d => d.Id == NC0001));
+            Assert.Empty(diagnostics.Where(d => d.Id == BlockedDependencies.BlockedDependencyAnalyser.DiagnosticId));
         }
         finally
         {
@@ -232,7 +230,7 @@ public class NewtonsoftJsonAnalyzerTests
             .AddSyntaxTrees(syntaxTree);
 
         // Create and run the analyzer
-        var analyzer = new NewtonsoftJsonDependencyAnalyzer();
+        var analyzer = new BlockedDependencies.BlockedDependencyAnalyser();
         var compilationWithAnalyzers = compilation.WithAnalyzers(
             ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
 

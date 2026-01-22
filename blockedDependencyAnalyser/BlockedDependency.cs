@@ -1,6 +1,8 @@
+namespace BlockedDependencies;
+
 public record BlockedDependency()
 {
-    public string PackageName { get; set;}
-    public string? MinimumVersion {get; set; }
-    public string? MaximumVersion {get; set; }
+    public required string PackageName { get; set; }
+    public string? BlockFromVersion { get; set; }
+    public string? BlockToVersion { get; set; }
 }

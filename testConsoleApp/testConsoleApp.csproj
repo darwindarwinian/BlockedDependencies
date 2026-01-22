@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Analyzer Include="..\exampleAnalyser\bin\Debug\net10.0\exampleAnalyser.dll" />
+    <Analyzer Include="..\blockedDependencyAnalyser\bin\Debug\net10.0\blockedDependencyAnalyser.dll" />
   </ItemGroup>
 
     <ItemGroup>

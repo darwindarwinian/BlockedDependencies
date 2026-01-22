@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\exampleAnalyser\exampleAnalyser.csproj" />
+    <ProjectReference Include="..\blockedDependencyAnalyser\blockedDependencyAnalyser.csproj" />
   </ItemGroup>
 
 </Project>

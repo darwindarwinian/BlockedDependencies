@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Xml.Linq;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -10,6 +8,10 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString Title = "Newtonsoft.Json Dependency Detected";
     private static readonly LocalizableString MessageFormat = "Project contains Newtonsoft.Json v13+ dependency. This version is prohibited.";
     private const string Category = "Compatibility";
+
+    private const List<BlockedDependency> BlockedDependencies = [
+        new BlockedDependency("Newtonsoft.Json", new Version(13, 0, 0))
+    ];
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -73,7 +75,7 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private bool HasNewtonsoftJsonDependency(string csprojPath)
+    private bool HasBlockedDependency(string csprojPath, List<BlockedDependency> blockedDependencies)
     {
         try
         {
@@ -85,12 +87,15 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
             var packageReferences = doc.Descendants(xns + "PackageReference");
             foreach (var reference in packageReferences)
             {
-                var includeAttr = reference.Attribute("Include")?.Value ?? "";
-                if (includeAttr.Equals("Newtonsoft.Json", StringComparison.OrdinalIgnoreCase))
+                foreach (var blocked in blockedDependencies)
                 {
-                    var versionAttr = reference.Attribute("Version")?.Value ?? "";
-                    if (IsVersionGreaterOrEqual(versionAttr, new Version(13, 0, 0)))
-                        return true;
+                    var includeAttr = reference.Attribute("Include")?.Value ?? "";
+                    if (includeAttr.Equals(blocked.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var versionAttr = reference.Attribute("Version")?.Value ?? "";
+                        if (IsVersionGreaterOrEqual(versionAttr, blocked.MinimumVersion))
+                            return true;
+                    }
                 }
             }
 
@@ -98,15 +103,17 @@ public class NewtonsoftJsonDependencyAnalyzer : DiagnosticAnalyzer
             var references = doc.Descendants(xns + "Reference");
             foreach (var reference in references)
             {
-                var includeAttr = reference.Attribute("Include")?.Value ?? "";
-                if (includeAttr.StartsWith("Newtonsoft.Json", StringComparison.OrdinalIgnoreCase))
+                foreach (var blocked in blockedDependencies)
                 {
-                    // Extract version from format like "Newtonsoft.Json, Version=13.0.0.0"
-                    var versionMatch = System.Text.RegularExpressions.Regex.Match(includeAttr, @"Version=(\d+\.\d+\.\d+\.\d+)");
-                    if (versionMatch.Success && Version.TryParse(versionMatch.Groups[1].Value, out var version))
+                    var includeAttr = reference.Attribute("Include")?.Value ?? "";
+                    if (includeAttr.StartsWith(blocked.Name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (IsVersionGreaterOrEqual(version.ToString(), new Version(13, 0, 0)))
-                            return true;
+                        var versionMatch = System.Text.RegularExpressions.Regex.Match(includeAttr, @"Version=(\d+\.\d+\.\d+\.\d+)");
+                        if (versionMatch.Success && Version.TryParse(versionMatch.Groups[1].Value, out var version))
+                        {
+                            if (IsVersionGreaterOrEqual(version.ToString(), blocked.MinimumVersion))
+                                return true;
+                        }
                     }
                 }
             }

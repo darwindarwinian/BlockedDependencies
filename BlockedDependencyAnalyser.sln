@@ -2,9 +2,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "exampleAnalyser", "exampleAnalyser\exampleAnalyser.csproj", "{7A6BBE15-040B-476F-16C0-D6039F0BA086}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "blockedDependencyAnalyser", "blockedDependencyAnalyser\blockedDependencyAnalyser.csproj", "{7A6BBE15-040B-476F-16C0-D6039F0BA086}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "exampleAnalyser.Tests", "exampleAnalyser.Tests\exampleAnalyser.Tests.csproj", "{8B7CCF26-151C-587G-27D1-E7140G1CB197}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "blockedDependencyAnalyser.Tests", "blockedDependencyAnalyser.Tests\blockedDependencyAnalyser.Tests.csproj", "{8B7CCF26-151C-587G-27D1-E7140G1CB197}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
